@@ -12,8 +12,8 @@ class ConflictException(Exception):
 
 class CustomerSync:
 
-    def __init__(self, customerDataAccess):
-        self.customerDataAccess = customerDataAccess
+    def __init__(self, customerService):
+        self.customerService = customerService
 
 
     def syncWithDataLayer(self, externalCustomer):
@@ -54,11 +54,11 @@ class CustomerSync:
     def updateRelations(self, externalCustomer: ExternalCustomer, customer: Customer):
         consumerShoppingLists = externalCustomer.shoppingLists
         for consumerShoppingList in consumerShoppingLists:
-            self.customerDataAccess.updateShoppingList(customer, consumerShoppingList)
+            self.customerService.updateShoppingList(customer, consumerShoppingList)
 
 
     def updateCustomer(self, customer):
-        return self.customerDataAccess.updateCustomerRecord(customer)
+        return self.customerService.updateCustomerRecord(customer)
 
 
     def updateDuplicate(self, externalCustomer: ExternalCustomer, duplicate: Customer):
@@ -80,7 +80,7 @@ class CustomerSync:
 
 
     def createCustomer(self, customer) -> Customer:
-        return self.customerDataAccess.createCustomerRecord(customer)
+        return self.customerService.createCustomerRecord(customer)
 
 
     def populateFields(self, externalCustomer: ExternalCustomer, customer: Customer):
@@ -100,7 +100,7 @@ class CustomerSync:
         externalId = externalCustomer.externalId
         companyNumber = externalCustomer.companyNumber
 
-        customerMatches = self.customerDataAccess.loadCompanyCustomer(externalId, companyNumber)
+        customerMatches = self.customerService.loadCompanyCustomer(externalId, companyNumber)
 
         if customerMatches.customer is not None and CustomerType.COMPANY != customerMatches.customer.customerType:
             raise ConflictException("Existing customer for externalCustomer {externalId} already exists and is not a company")
@@ -129,7 +129,7 @@ class CustomerSync:
     def loadPerson(self, externalCustomer):
         externalId = externalCustomer.externalId
 
-        customerMatches = self.customerDataAccess.loadPersonCustomer(externalId)
+        customerMatches = self.customerService.loadPersonCustomer(externalId)
 
         if customerMatches.customer is not None:
             if CustomerType.PERSON != customerMatches.customer.customerType:

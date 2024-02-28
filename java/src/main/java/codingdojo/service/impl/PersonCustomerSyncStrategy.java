@@ -5,22 +5,21 @@ import codingdojo.model.Customer;
 import codingdojo.model.CustomerMatches;
 import codingdojo.model.CustomerType;
 import codingdojo.model.ExternalCustomer;
-import codingdojo.repository.CustomerDataAccess;
 import codingdojo.service.ISyncStrategy;
 
 public class PersonCustomerSyncStrategy implements ISyncStrategy {
 
-    private final CustomerDataAccess customerDataAccess;
+    private final CustomerService customerService;
 
-    public PersonCustomerSyncStrategy(CustomerDataAccess customerDataAccess) {
-        this.customerDataAccess = customerDataAccess;
+    public PersonCustomerSyncStrategy(CustomerService customerService) {
+        this.customerService = customerService;
     }
 
     @Override
     public CustomerMatches load(ExternalCustomer externalCustomer) {
         final String externalId = externalCustomer.getExternalId();
 
-        CustomerMatches customerMatches = customerDataAccess.loadPersonCustomer(externalId);
+        CustomerMatches customerMatches = customerService.loadPersonCustomer(externalId);
 
         if (customerMatches.getCustomer() != null) {
             if (!CustomerType.PERSON.equals(customerMatches.getCustomer().getCustomerType())) {
@@ -33,7 +32,6 @@ public class PersonCustomerSyncStrategy implements ISyncStrategy {
                 customer.setMasterExternalId(externalId);
             }
         }
-
         return customerMatches;
     }
 }

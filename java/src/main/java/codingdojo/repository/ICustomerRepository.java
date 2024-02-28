@@ -3,7 +3,7 @@ package codingdojo.repository;
 import codingdojo.model.Customer;
 import codingdojo.model.ShoppingList;
 
-public interface CustomerDataLayer {
+public interface ICustomerRepository {
     Customer updateCustomerRecord(Customer customer);
 
     Customer createCustomerRecord(Customer customer);

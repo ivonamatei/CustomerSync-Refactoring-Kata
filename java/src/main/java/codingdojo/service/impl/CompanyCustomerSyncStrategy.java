@@ -5,26 +5,24 @@ import codingdojo.model.Customer;
 import codingdojo.model.CustomerMatches;
 import codingdojo.model.CustomerType;
 import codingdojo.model.ExternalCustomer;
-import codingdojo.repository.CustomerDataAccess;
 import codingdojo.service.ISyncStrategy;
 
 public class CompanyCustomerSyncStrategy implements ISyncStrategy {
-    private final CustomerDataAccess customerDataAccess;
+    private final CustomerService customerService;
 
-    public CompanyCustomerSyncStrategy(CustomerDataAccess customerDataAccess) {
-        this.customerDataAccess = customerDataAccess;
+    public CompanyCustomerSyncStrategy(CustomerService customerService) {
+        this.customerService = customerService;
     }
 
     @Override
     public CustomerMatches load(ExternalCustomer externalCustomer) {
-
         final String externalId = externalCustomer.getExternalId();
         final String companyNumber = externalCustomer.getCompanyNumber();
 
-        CustomerMatches customerMatches = customerDataAccess.loadCompanyCustomer(externalId, companyNumber);
+        CustomerMatches customerMatches = customerService.loadCompanyCustomer(externalId, companyNumber);
 
         if (customerMatches.getCustomer() != null && !CustomerType.COMPANY.equals(customerMatches.getCustomer().getCustomerType())) {
-            throw new ConflictException("Existing customer for externalCustomer " + externalId + " already exists and is not a company");
+            throw new ConflictException("Existing customer for externalCustomer %s already exists and is not a company".formatted(externalId));
         }
 
         if ("ExternalId".equals(customerMatches.getMatchTerm())) {
@@ -38,7 +36,7 @@ public class CompanyCustomerSyncStrategy implements ISyncStrategy {
         } else if ("CompanyNumber".equals(customerMatches.getMatchTerm())) {
             String customerExternalId = customerMatches.getCustomer().getExternalId();
             if (customerExternalId != null && !externalId.equals(customerExternalId)) {
-                throw new ConflictException("Existing customer for externalCustomer " + companyNumber + " doesn't match external id " + externalId + " instead found " + customerExternalId);
+                throw new ConflictException("Existing customer for externalCustomer %s doesn't match external id %s instead found %s".formatted(companyNumber, externalId, customerExternalId));
             }
             Customer customer = customerMatches.getCustomer();
             customer.setExternalId(externalId);

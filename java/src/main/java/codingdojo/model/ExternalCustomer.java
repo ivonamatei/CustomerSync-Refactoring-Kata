@@ -9,7 +9,7 @@ public class ExternalCustomer {
     private Address address;
     private String name;
     private String preferredStore;
-    //using wrapper class in order to distinct from null (not applicable bonus points) and 0 ( no bonus points left)
+    //Using wrapper class to differentiate between null (non-applicable bonus points) and 0 (no remaining bonus points)
     private Integer bonusPointsBalance;
     private List<ShoppingList> shoppingLists;
     private String externalId;

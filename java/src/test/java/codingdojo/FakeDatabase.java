@@ -2,14 +2,14 @@ package codingdojo;
 
 import codingdojo.model.Customer;
 import codingdojo.model.ShoppingList;
-import codingdojo.repository.CustomerDataLayer;
+import codingdojo.repository.ICustomerRepository;
 
 import java.util.*;
 
 /**
  * Fake implementation of data layer that stores data in-memory
  */
-public class FakeDatabase implements CustomerDataLayer {
+public class FakeDatabase implements ICustomerRepository {
 
     private final HashMap<String, Customer> customersByExternalId = new HashMap<>();
     private final HashMap<String, Customer> customersByMasterExternalId = new HashMap<>();
