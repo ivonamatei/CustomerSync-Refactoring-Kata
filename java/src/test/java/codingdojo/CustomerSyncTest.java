@@ -1,10 +1,13 @@
 package codingdojo;
 
+import codingdojo.exception.ConflictException;
+import codingdojo.model.*;
+import codingdojo.service.impl.CustomerSync;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,16 +15,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CustomerSyncTest {
 
+    private static final int BONUS_POINTS_BALANCE = 100;
+
     /**
      * The external record already exists in the customer db, so no need to create it.
      * There is new data in some fields, which is merged in.
      */
     @Test
-    public void syncCompanyByExternalId(){
+    public void syncCompanyByExternalId() {
         String externalId = "12345";
 
         ExternalCustomer externalCustomer = createExternalCompany();
         externalCustomer.setExternalId(externalId);
+        externalCustomer.setBonusPointsBalance(100);
 
         Customer customer = createCustomerWithSameCompanyAs(externalCustomer);
         customer.setExternalId(externalId);
@@ -35,17 +41,19 @@ public class CustomerSyncTest {
         // ACT
         boolean created = sut.syncWithDataLayer(externalCustomer);
 
+        //ASSERT
         assertFalse(created);
         printAfterState(db, toAssert);
         Approvals.verify(toAssert);
     }
 
     @Test
-    public void syncPrivatePersonByExternalId(){
+    public void syncPrivatePersonByExternalId() {
         String externalId = "12345";
 
         ExternalCustomer externalCustomer = createExternalPrivatePerson();
         externalCustomer.setExternalId(externalId);
+        externalCustomer.setBonusPointsBalance(100);
 
         Customer customer = new Customer();
         customer.setCustomerType(CustomerType.PERSON);
@@ -65,17 +73,48 @@ public class CustomerSyncTest {
         printAfterState(db, toAssert);
         Approvals.verify(toAssert);
     }
-
     @Test
-    public void syncShoppingLists(){
+    public void syncPrivatePersonBonusPointsBalanceUpdate() {
+        //ARRANGE
         String externalId = "12345";
 
-        ExternalCustomer externalCustomer = createExternalCompany();
+        ExternalCustomer externalCustomer = createExternalPrivatePerson();
+        externalCustomer.setExternalId(externalId);
+        externalCustomer.setBonusPointsBalance(BONUS_POINTS_BALANCE + BONUS_POINTS_BALANCE);
+
+        Customer customer = new Customer();
+        customer.setCustomerType(CustomerType.PERSON);
+        customer.setInternalId("67576");
+        customer.setExternalId(externalId);
+        customer.setBonusPointsBalance(BONUS_POINTS_BALANCE);
+
+        FakeDatabase db = new FakeDatabase();
+        db.addCustomer(customer);
+        CustomerSync sut = new CustomerSync(db);
+
+        StringBuilder toAssert = printBeforeState(externalCustomer, db);
+
+        // ACT
+        boolean created = sut.syncWithDataLayer(externalCustomer);
+
+        //ASSERT
+        assertFalse(created);
+        printAfterState(db, toAssert);
+        Approvals.verify(toAssert);
+    }
+
+    @Test
+    public void syncPrivatePersonNoBonusPointsBalanceUpdate() {
+        String externalId = "12345";
+
+        ExternalCustomer externalCustomer = createExternalPrivatePerson();
         externalCustomer.setExternalId(externalId);
 
-        Customer customer = createCustomerWithSameCompanyAs(externalCustomer);
+        Customer customer = new Customer();
+        customer.setCustomerType(CustomerType.PERSON);
+        customer.setInternalId("67576");
         customer.setExternalId(externalId);
-        customer.setShoppingLists(Arrays.asList(new ShoppingList("eyeliner", "blusher")));
+        customer.setBonusPointsBalance(BONUS_POINTS_BALANCE);
 
         FakeDatabase db = new FakeDatabase();
         db.addCustomer(customer);
@@ -92,10 +131,36 @@ public class CustomerSyncTest {
     }
 
     @Test
-    public void syncNewCompanyCustomer(){
+    public void syncShoppingLists() {
+        String externalId = "12345";
+
+        ExternalCustomer externalCustomer = createExternalCompany();
+        externalCustomer.setExternalId(externalId);
+
+        Customer customer = createCustomerWithSameCompanyAs(externalCustomer);
+        customer.setExternalId(externalId);
+        customer.setShoppingLists(List.of(new ShoppingList("eyeliner", "blusher")));
+
+        FakeDatabase db = new FakeDatabase();
+        db.addCustomer(customer);
+        CustomerSync sut = new CustomerSync(db);
+
+        StringBuilder toAssert = printBeforeState(externalCustomer, db);
+
+        // ACT
+        boolean created = sut.syncWithDataLayer(externalCustomer);
+
+        assertFalse(created);
+        printAfterState(db, toAssert);
+        Approvals.verify(toAssert);
+    }
+
+    @Test
+    public void syncNewCompanyCustomer() {
 
         ExternalCustomer externalCustomer = createExternalCompany();
         externalCustomer.setExternalId("12345");
+        externalCustomer.setBonusPointsBalance(BONUS_POINTS_BALANCE);
 
         FakeDatabase db = new FakeDatabase();
         CustomerSync sut = new CustomerSync(db);
@@ -111,10 +176,11 @@ public class CustomerSyncTest {
     }
 
     @Test
-    public void syncNewPrivateCustomer(){
+    public void syncNewPrivateCustomer() {
 
         ExternalCustomer externalCustomer = createExternalPrivatePerson();
         externalCustomer.setExternalId("12345");
+        externalCustomer.setBonusPointsBalance(BONUS_POINTS_BALANCE);
 
         FakeDatabase db = new FakeDatabase();
         CustomerSync sut = new CustomerSync(db);
@@ -147,15 +213,12 @@ public class CustomerSyncTest {
 
         StringBuilder toAssert = printBeforeState(externalCustomer, db);
 
-        Assertions.assertThrows(ConflictException.class, () -> {
-            sut.syncWithDataLayer(externalCustomer);
-        }, printAfterState(db, toAssert).toString());
-
+        Assertions.assertThrows(ConflictException.class, () -> sut.syncWithDataLayer(externalCustomer), printAfterState(db, toAssert).toString());
         Approvals.verify(toAssert);
     }
 
     @Test
-    public void syncByExternalIdButCompanyNumbersConflict(){
+    public void syncByExternalIdButCompanyNumbersConflict() {
         String externalId = "12345";
 
         ExternalCustomer externalCustomer = createExternalCompany();
@@ -181,7 +244,7 @@ public class CustomerSyncTest {
 
 
     @Test
-    public void syncByCompanyNumber(){
+    public void syncByCompanyNumber() {
         String companyNumber = "12345";
 
         ExternalCustomer externalCustomer = createExternalCompany();
@@ -206,7 +269,7 @@ public class CustomerSyncTest {
     }
 
     @Test
-    public void syncByCompanyNumberWithConflictingExternalId(){
+    public void syncByCompanyNumberWithConflictingExternalId() {
         String companyNumber = "12345";
 
         ExternalCustomer externalCustomer = createExternalCompany();
@@ -224,10 +287,7 @@ public class CustomerSyncTest {
         StringBuilder toAssert = printBeforeState(externalCustomer, db);
 
         // ACT
-        Assertions.assertThrows(ConflictException.class, () -> {
-            sut.syncWithDataLayer(externalCustomer);
-        }, printAfterState(db, toAssert).toString());
-
+        Assertions.assertThrows(ConflictException.class, () -> sut.syncWithDataLayer(externalCustomer), printAfterState(db, toAssert).toString());
         Approvals.verify(toAssert);
     }
 
@@ -237,6 +297,7 @@ public class CustomerSyncTest {
 
         ExternalCustomer externalCustomer = createExternalPrivatePerson();
         externalCustomer.setExternalId(externalId);
+        externalCustomer.setBonusPointsBalance(BONUS_POINTS_BALANCE);
 
         Customer customer = new Customer();
         customer.setCustomerType(CustomerType.COMPANY);
@@ -250,15 +311,12 @@ public class CustomerSyncTest {
 
         StringBuilder toAssert = printBeforeState(externalCustomer, db);
 
-        Assertions.assertThrows(ConflictException.class, () -> {
-            sut.syncWithDataLayer(externalCustomer);
-        }, printAfterState(db, toAssert).toString());
-
+        Assertions.assertThrows(ConflictException.class, () -> sut.syncWithDataLayer(externalCustomer), printAfterState(db, toAssert).toString());
         Approvals.verify(toAssert);
     }
 
     @Test
-    public void syncCompanyByExternalIdWithNonMatchingMasterId(){
+    public void syncCompanyByExternalIdWithNonMatchingMasterId() {
         String externalId = "12345";
 
         ExternalCustomer externalCustomer = createExternalCompany();
@@ -297,7 +355,7 @@ public class CustomerSyncTest {
         externalCustomer.setName("Joe Bloggs");
         externalCustomer.setAddress(new Address("123 main st", "Stockholm", "SE-123 45"));
         externalCustomer.setPreferredStore("Nordstan");
-        externalCustomer.setShoppingLists(Arrays.asList(new ShoppingList("lipstick", "foundation")));
+        externalCustomer.setShoppingLists(List.of(new ShoppingList("lipstick", "foundation")));
         return externalCustomer;
     }
 
@@ -308,7 +366,7 @@ public class CustomerSyncTest {
         externalCustomer.setName("Acme Inc.");
         externalCustomer.setAddress(new Address("123 main st", "Helsingborg", "SE-123 45"));
         externalCustomer.setCompanyNumber("470813-8895");
-        externalCustomer.setShoppingLists(Arrays.asList(new ShoppingList("lipstick", "blusher")));
+        externalCustomer.setShoppingLists(List.of(new ShoppingList("lipstick", "blusher")));
         return externalCustomer;
     }
 

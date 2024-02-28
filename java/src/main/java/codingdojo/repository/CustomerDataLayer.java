@@ -1,7 +1,9 @@
-package codingdojo;
+package codingdojo.repository;
+
+import codingdojo.model.Customer;
+import codingdojo.model.ShoppingList;
 
 public interface CustomerDataLayer {
-
     Customer updateCustomerRecord(Customer customer);
 
     Customer createCustomerRecord(Customer customer);

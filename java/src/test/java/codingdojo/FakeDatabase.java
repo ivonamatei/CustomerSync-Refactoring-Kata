@@ -1,5 +1,9 @@
 package codingdojo;
 
+import codingdojo.model.Customer;
+import codingdojo.model.ShoppingList;
+import codingdojo.repository.CustomerDataLayer;
+
 import java.util.*;
 
 /**
@@ -7,9 +11,9 @@ import java.util.*;
  */
 public class FakeDatabase implements CustomerDataLayer {
 
-    private final HashMap<String, Customer> customersByExternalId = new HashMap<String, Customer>();
-    private final HashMap<String, Customer> customersByMasterExternalId = new HashMap<String, Customer>();
-    private final HashMap<String, Customer> customersByCompanyNumber = new HashMap<String, Customer>();
+    private final HashMap<String, Customer> customersByExternalId = new HashMap<>();
+    private final HashMap<String, Customer> customersByMasterExternalId = new HashMap<>();
+    private final HashMap<String, Customer> customersByCompanyNumber = new HashMap<>();
     private final Set<ShoppingList> shoppingLists = new HashSet<>();
 
 
@@ -63,10 +67,10 @@ public class FakeDatabase implements CustomerDataLayer {
     }
 
     public List<Customer> getAllCustomers() {
-        Set<Customer> allCustomers = new HashSet<Customer>(customersByExternalId.values());
+        Set<Customer> allCustomers = new HashSet<>(customersByExternalId.values());
         allCustomers.addAll(customersByMasterExternalId.values());
         allCustomers.addAll(customersByCompanyNumber.values());
-        ArrayList<Customer> sortedList = new ArrayList<Customer>(allCustomers);
+        ArrayList<Customer> sortedList = new ArrayList<>(allCustomers);
         sortedList.sort((o1, o2) -> Comparator.comparing(Customer::getInternalId)
                 .thenComparing(Customer::getName)
                 .compare(o1, o2));

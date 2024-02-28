@@ -1,4 +1,8 @@
-package codingdojo;
+package codingdojo.repository;
+
+import codingdojo.model.Customer;
+import codingdojo.model.CustomerMatches;
+import codingdojo.model.ShoppingList;
 
 public class CustomerDataAccess {
 
@@ -15,7 +19,9 @@ public class CustomerDataAccess {
             matches.setCustomer(matchByExternalId);
             matches.setMatchTerm("ExternalId");
             Customer matchByMasterId = this.customerDataLayer.findByMasterExternalId(externalId);
-            if (matchByMasterId != null) matches.addDuplicate(matchByMasterId);
+            if (matchByMasterId != null) {
+                matches.addDuplicate(matchByMasterId);
+            }
         } else {
             Customer matchByCompanyNumber = this.customerDataLayer.findByCompanyNumber(companyNumber);
             if (matchByCompanyNumber != null) {
